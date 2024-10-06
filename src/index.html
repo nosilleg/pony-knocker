@@ -1,0 +1,98 @@
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <title>Let's Go (Pony) knocker</title>
+        <link rel="canonical" href="https://nosilleg.github.com/pony-knocker" />
+        <style>
+            [x-ref="knockable"] {
+                margin: 0;
+                padding: 0;
+                display: flex;
+                flex-flow: column nowrap;
+                align-items: center;
+            }
+            .success img {
+                filter: invert(1);
+            }
+            .success::after {
+                content: "You've got good timing!";
+            }
+
+            .resetPen {
+                display: none;
+            }
+        </style>
+      </head>
+    <body>
+        <div x-ref="knockable">
+            <img src="https://direct.rhapsody.com/imageserver/images/alb.130629973/500x500.jpg" alt="The Routers Let's Go (Pony)">
+            <p>Click the image the right way!<p>
+        </div>
+
+        <script>
+            const clickable = document.querySelector("[x-ref=knockable]");
+            const knocker = function knockerFn(expectedGaps) {
+                const timing = [];
+                const gracePercentage = 0.5;
+                let successPromiseResolver;
+                const successPromise = new Promise((resolve) => {
+                    successPromiseResolver = resolve;
+                });
+                let resetKnockTimerId;
+                const resetKnock = function resetKnockFn() {
+                    timing.length = 0;
+                };
+
+                const knockTracker = function knockTrackerFn(event) {
+                    timing.push(performance.now());
+                    window.clearTimeout(resetKnockTimerId);
+                    resetKnockTimerId = window.setTimeout(resetKnock, 3000);
+
+                    if (expectedGaps.length === timing.length - 1) {
+                    // check gaps match
+                    let pass = false;
+                    let previousTime = 0;
+                    let paceMin;
+                    let paceMax;
+
+                    timing.forEach((time, index, array) => {
+                        let gap = time - previousTime;
+                        let pace = gap / expectedGaps[index - 1];
+                        if (index === 0) {
+                        // do nothing;
+                        } else if (index === 1) {
+                        paceMin = pace - pace * gracePercentage;
+                        paceMax = pace + pace * gracePercentage;
+                        pass = true;
+                        } else {
+                        pass = pass && pace > paceMin && pace < paceMax;
+                        }
+                        previousTime = time;
+                    });
+
+                    if (pass === true) {
+                        successPromiseResolver();
+                    }
+                    window.clearTimeout(resetKnockTimerId);
+                    resetKnock();
+                    }
+                };
+
+                return {
+                    listenerFunction: knockTracker,
+                    successPromise
+                };
+            };
+
+            const letsGoPony = knocker([2, 2, 1, 1, 2, 1, 1, 1, 2, 1]);
+            letsGoPony.successPromise.then(() => {
+                clickable.classList.add("success");
+            });
+
+            if (clickable) {
+                clickable.addEventListener("click", letsGoPony.listenerFunction);
+            }
+
+          </script>
+    </body>
+</html>
